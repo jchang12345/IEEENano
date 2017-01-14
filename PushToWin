@@ -1,0 +1,141 @@
+#define Button1 7
+#define Button2 8
+#define LED1 5
+#define LED2 6
+#define R 9
+#define G 11
+#define B 10
+#include <time.h>
+
+
+// max brightness
+const int MAX_BRIGHTNESS = 255;
+
+
+// random push amount goal
+int randoNum;
+
+// push counters
+int player1PushCounter, player2PushCounter;
+
+// simulate levels of brightness 
+double brightnessPartition, currentBrightness;
+
+// button pressed
+bool isPlayer1ButtonPressed, isPlayer2ButtonPressed;
+
+// timers
+time_t player1Seconds, player2Seconds;
+
+// winning player
+int winnerNum;
+
+
+void setup() {
+    // put your setup code here, to run once:
+    randomSeed(analogRead(0));
+    Serial.begin(9600);
+    pinMode(Button1,INPUT);
+    pinMode(Button2,INPUT);
+    pinMode(LED1,OUTPUT);
+    pinMode(LED2,OUTPUT);
+    pinMode(R,OUTPUT);
+    pinMode(G,OUTPUT);
+    pinMode(B,OUTPUT);
+
+    // generating a random int from 15 to 30
+    randoNum = random(30);
+    while(randoNum<15)
+    {
+        randoNum=random(30);
+    }
+    //rr until u get a number between 15 and 30, ill double check that w/ a serial print
+    Serial.println(randoNum);
+    
+    // analog value change of each button push
+    brightnessPartition = MAX_BRIGHTNESS / randoNum;
+
+    // push counters
+    player1PushCounter = 0;
+    player2PushCounter = 0;
+
+    // button pressed
+    isPlayer1ButtonPressed = false;
+    isPlayer2ButtonPressed = false;
+}
+
+
+void loop() {
+    // put your main code here, to run repeatedly:
+    
+    isPlayer1ButtonPressed = digitalRead(Button1), isPlayer2ButtonPressed = digitalRead(Button2);
+    
+    //should all be digital write or read of some sort, but that's what they want you to think with the digital ports
+    //actually, can use PWM (Pulse width modulation) which says that you can use analog for digital ports : 3,5,6,9,10,11
+    if(winnerNum == 0 && isPlayer1ButtonPressed)
+    {   
+        player1Seconds = time(0);
+        player1PushCounter++;
+        
+        //if currentbrightness is 255, we want to check if delay is 1000 before we deem player winner
+        if(currentBrightness == MAX_BRIGHTNESS)
+        {
+          Serial.println("Overshot the push goal: Reset Player 1. To win, you must wait at least one second after reaching the push goal."); // losing message
+          analogWrite(LED1, 0); // turn off led
+        }
+        else
+        {
+          //gives u "levels of brightness"
+          currentBrightness += brightnessPartition;
+          analogWrite(LED1,currentBrightness); 
+        
+          if(currentBrightness == MAX_BRIGHTNESS && player1Seconds > 1)
+          {
+            winnerNum = 1;
+          }
+        }      
+    }
+
+    if(winnerNum == 0 && isPlayer2ButtonPressed)
+    {
+        player2Seconds = time(0);
+        player2PushCounter++;
+        
+        //if currentbrightness is 255, we want to check if delay is 1000 before we deem player winner
+        if(currentBrightness == MAX_BRIGHTNESS)
+        {
+          Serial.println("Overshot the push goal: Reset Player 2. To win, you must wait at least one second after reaching the push goal.");
+          analogWrite(LED2, 0);
+          //break; //break is only for loops, need diff alg for breaking out of an if statement
+        }
+        else
+        {
+          //gives u "levels of brightness"
+          currentBrightness += brightnessPartition;
+          analogWrite(LED2,currentBrightness); 
+        
+          if(currentBrightness == MAX_BRIGHTNESS && player2Seconds > 1)
+          {
+            winnerNum = 2;
+          }
+        }     
+    }
+
+    switch (winnerNum)
+    {
+      case 1:
+        Serial.println("WINNER WINNER WINNER: Player 1");
+        exit(0);
+        break;
+      case 2:
+        Serial.println("WINNER WINNER WINNER: Player 2");
+        exit(0);
+        break;
+    }
+}
+
+
+
+
+
+
